@@ -239,6 +239,7 @@ class googleimagesdownload:
 
     # Download Page for more than 100 images
     def download_extended_page(self, url, chromedriver):
+        print(str(url))
         from selenium import webdriver
         from selenium.webdriver.common.keys import Keys
         if sys.version_info[0] < 3:
@@ -501,13 +502,6 @@ class googleimagesdownload:
         else:
             lang_url = ''
 
-        if arguments['time_range']:
-            json_acceptable_string = arguments['time_range'].replace("'", "\"")
-            d = json.loads(json_acceptable_string)
-            time_range = ',cdr:1,cd_min:' + d['time_min'] + ',cd_max:' + d['time_max']
-        else:
-            time_range = ''
-
         if arguments['exact_size']:
             size_array = [x.strip() for x in arguments['exact_size'].split(',')]
             exact_size = ",isz:ex,iszw:" + str(size_array[0]) + ",iszh:" + str(size_array[1])
@@ -555,13 +549,20 @@ class googleimagesdownload:
                 else:
                     built_url = built_url + ',' + ext_param
                     counter += 1
-        built_url = lang_url + built_url + exact_size + time_range
+        built_url = lang_url + built_url + exact_size
         return built_url
 
     # building main search URL
-    def build_search_url(self, search_term, params, url, similar_images, specific_site, safe_search):
+    def build_search_url(self, search_term, time_range, params, url, similar_images, specific_site, safe_search):
         # check safe_search
         safe_search_string = "&safe=active"
+        if time_range:
+            json_acceptable_string = time_range.replace("'", "\"")
+            d = json.loads(json_acceptable_string)
+            #time_range = ',cdr:1,cd_min:' + d['time_min'] + ',cd_max:' + d['time_max']
+            time_range = '+before%3A' + d['time_max'] + '+after%3A' + d['time_min']
+        else:
+            time_range = ''
         # check the args and choose the URL
         if url:
             url = url
@@ -576,7 +577,7 @@ class googleimagesdownload:
         else:
             url = 'https://www.google.com/search?q=' + quote(
                 search_term.encode(
-                    'utf-8')) + '&espv=2&biw=1366&bih=667&site=webhp&source=lnms&tbm=isch' + params + '&sa=X&ei=XosDVaCXD8TasATItgE&ved=0CAcQ_AUoAg'
+                    'utf-8')) + time_range + '&espv=2&biw=1366&bih=667&site=webhp&source=lnms&tbm=isch' + params + '&sa=X&ei=XosDVaCXD8TasATItgE&ved=0CAcQ_AUoAg'
 
         # safe search check
         if safe_search:
@@ -878,7 +879,7 @@ class googleimagesdownload:
                 break
             #code added here to attempt to implement offset correctly
             #was "count < int(arguments['offset'])" in hardikvasa code, this seems
-            # to be contrary to the implementation details. 
+            # to be contrary to the implementation details.
             elif arguments['offset'] and count <= int(arguments['offset']):
                     count += 1
                     #page = page[end_content:]
@@ -1075,7 +1076,7 @@ class googleimagesdownload:
 
                     params = self.build_url_parameters(arguments)  # building URL with params
 
-                    url = self.build_search_url(search_term, params, arguments['url'], arguments['similar_images'],
+                    url = self.build_search_url(search_term, arguments['time_range'], params, arguments['url'], arguments['similar_images'],
                                                 arguments['specific_site'],
                                                 arguments['safe_search'])  # building main search url
 
